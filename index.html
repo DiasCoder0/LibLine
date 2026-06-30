@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LibLine — Sistem Perpustakaan Digital</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===== SIDEBAR NAV ===== -->
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="logo-title">LibLine</div>
+        <div class="logo-sub">Digital Library System</div>
+      </div>
+    </div>
+
+    <ul class="nav-list">
+      <li class="nav-section-label">MANAJEMEN BUKU</li>
+      <li class="nav-item active" data-page="add-book">
+        <span class="nav-icon">➕</span> Tambah Buku
+      </li>
+      <li class="nav-item" data-page="delete-book">
+        <span class="nav-icon">🗑️</span> Hapus Buku
+      </li>
+      <li class="nav-item" data-page="update-stock">
+        <span class="nav-icon">📦</span> Update Stok
+      </li>
+      <li class="nav-item" data-page="books">
+        <span class="nav-icon">📖</span> Tampilkan Semua Buku
+      </li>
+      <li class="nav-section-label">PENCARIAN</li>
+      <li class="nav-item" data-page="search">
+        <span class="nav-icon">🔍</span> Cari Buku
+      </li>
+      <li class="nav-section-label">PEMINJAMAN</li>
+      <li class="nav-item" data-page="borrow-queue">
+        <span class="nav-icon">🗂️</span> Antrian Pinjam
+      </li>
+      <li class="nav-item" data-page="return-book">
+        <span class="nav-icon">↩️</span> Pengembalian Buku
+      </li>
+      <li class="nav-item" data-page="history">
+        <span class="nav-icon">📋</span> Riwayat
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <span id="book-count-badge">0 buku</span> tersimpan
+    </div>
+  </nav>
+
+  <!-- ===== HAMBURGER (mobile) ===== -->
+  <button id="hamburger" aria-label="Toggle menu">&#9776;</button>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main id="main-content">
+
+    <!-- ── PAGE: 1. Tambah Buku ── -->
+    <section id="page-add-book" class="page active">
+      <div class="page-header">
+        <h1>➕ Tambah Buku Baru</h1>
+        <p class="page-desc">Buku disimpan ke <strong>Hash Table</strong> menggunakan Polynomial Rolling Hash.</p>
+      </div>
+      <div class="card form-card">
+        <form id="form-add-book" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Kode Buku *</label>
+              <input type="text" id="add-code" placeholder="Contoh: BK009" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label>Rak * <span class="hint">(format: A1 – Z9)</span></label>
+              <input type="text" id="add-rack" placeholder="Contoh: A1" maxlength="2" autocomplete="off" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Judul Buku *</label>
+            <input type="text" id="add-title" placeholder="Masukkan judul buku" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label>Pengarang *</label>
+            <input type="text" id="add-author" placeholder="Nama pengarang" autocomplete="off" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tahun Terbit *</label>
+              <input type="number" id="add-year" placeholder="Contoh: 2005" min="1000" max="9999" />
+            </div>
+            <div class="form-group">
+              <label>Stok *</label>
+              <input type="number" id="add-stock" placeholder="Jumlah stok" min="0" value="1" />
+            </div>
+          </div>
+          <div id="add-result" class="result-box hidden"></div>
+          <button type="submit" class="btn btn-primary">Tambah Buku</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── PAGE: 2. Hapus Buku ── -->
+    <section id="page-delete-book" class="page">
+      <div class="page-header">
+        <h1>🗑️ Hapus Buku</h1>
+        <p class="page-desc">Hapus menggunakan mekanisme <strong>Tombstone</strong> pada Hash Table.</p>
+      </div>
+      <div class="card form-card">
+        <form id="form-delete-book" novalidate>
+          <div class="form-group">
+            <label>Kode Buku</label>
+            <input type="text" id="delete-code" placeholder="Masukkan kode buku" autocomplete="off" />
+          </div>
+          <div id="delete-book-preview" class="book-preview hidden"></div>
+          <div id="delete-result" class="result-box hidden"></div>
+          <div class="btn-row">
+            <button type="button" id="btn-find-delete" class="btn btn-secondary">Cari Buku</button>
+            <button type="submit" id="btn-do-delete" class="btn btn-danger hidden">Hapus Buku</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── PAGE: 3. Update Stok ── -->
+    <section id="page-update-stock" class="page">
+      <div class="page-header">
+        <h1>📦 Update Stok Buku</h1>
+      </div>
+      <div class="card form-card">
+        <form id="form-update-stock" novalidate>
+          <div class="form-group">
+            <label>Kode Buku</label>
+            <input type="text" id="update-code" placeholder="Masukkan kode buku" autocomplete="off" />
+          </div>
+          <div id="update-book-preview" class="book-preview hidden"></div>
+          <div class="form-row" id="update-controls" style="display:none">
+            <div class="form-group">
+              <label>Operasi</label>
+              <select id="update-op">
+                <option value="add">➕ Tambah</option>
+                <option value="sub">➖ Kurangi</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Jumlah</label>
+              <input type="number" id="update-amount" min="1" value="1" />
+            </div>
+          </div>
+          <div id="update-result" class="result-box hidden"></div>
+          <div class="btn-row">
+            <button type="button" id="btn-find-update" class="btn btn-secondary">Cari Buku</button>
+            <button type="submit" id="btn-do-update" class="btn btn-primary hidden">Simpan Perubahan</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── PAGE: 4. Tampilkan Semua Buku ── -->
+    <section id="page-books" class="page">
+      <div class="page-header">
+        <h1>📖 Tampilkan Semua Buku</h1>
+        <p class="page-desc">Semua buku diurutkan menggunakan <strong>Merge Sort</strong>.</p>
+      </div>
+      <div class="toolbar">
+        <label>Urutkan:
+          <select id="sort-key">
+            <option value="code">Kode</option>
+            <option value="title">Judul</option>
+            <option value="author">Pengarang</option>
+            <option value="year">Tahun Terbit</option>
+          </select>
+        </label>
+        <span id="total-books-label" class="badge-info"></span>
+      </div>
+      <div class="table-wrapper">
+        <table id="books-table">
+          <thead>
+            <tr>
+              <th>No.</th><th>Kode</th><th>Judul</th><th>Pengarang</th>
+              <th>Tahun</th><th>Stok</th><th>Rak</th>
+            </tr>
+          </thead>
+          <tbody id="books-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── PAGE: 5. Cari Buku ── -->
+    <section id="page-search" class="page">
+      <div class="page-header">
+        <h1>🔍 Cari Buku</h1>
+      </div>
+      <div class="card">
+        <div class="search-tabs">
+          <button class="tab-btn active" data-tab="search-code">🔑 Kode (Binary Search)</button>
+          <button class="tab-btn" data-tab="search-title">🔤 Judul (Trie Autocomplete)</button>
+        </div>
+
+        <!-- Tab: Kode -->
+        <div id="tab-search-code" class="tab-content active">
+          <div class="form-group mt-12">
+            <label>Kode Buku</label>
+            <input type="text" id="search-code-input" placeholder="Contoh: BK001" autocomplete="off" />
+          </div>
+          <button id="btn-search-code" class="btn btn-primary">Cari</button>
+          <div id="bs-steps" class="algo-log hidden"></div>
+          <div id="search-code-result" class="search-result-area"></div>
+        </div>
+
+        <!-- Tab: Judul -->
+        <div id="tab-search-title" class="tab-content">
+          <div class="form-group mt-12">
+            <label>Awalan Judul</label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="search-title-input" placeholder="Ketik awalan judul buku..." autocomplete="off" />
+              <ul id="autocomplete-list" class="autocomplete-dropdown hidden"></ul>
+            </div>
+          </div>
+          <div id="search-title-result" class="search-result-area"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: 6. Antrian Pinjam ── -->
+    <section id="page-borrow-queue" class="page">
+      <div class="page-header">
+        <h1>🗂️ Antrian Peminjaman</h1>
+        <p class="page-desc">Menggunakan <strong>Circular Queue</strong> kapasitas 20 — FIFO.</p>
+      </div>
+
+      <div class="borrow-layout">
+        <!-- Form daftar pinjam -->
+        <div class="card form-card">
+          <h2 class="card-title">Daftar Pinjam</h2>
+          <form id="form-enqueue" novalidate>
+            <div class="form-group">
+              <label>Nama Anggota</label>
+              <input type="text" id="borrow-member" placeholder="Nama lengkap anggota" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label>Kode Buku</label>
+              <input type="text" id="borrow-code" placeholder="Contoh: BK001" autocomplete="off" />
+            </div>
+            <div id="enqueue-result" class="result-box hidden"></div>
+            <div class="btn-row">
+              <button type="submit" class="btn btn-primary">Masuk Antrian</button>
+              <button type="button" id="btn-process-borrow" class="btn btn-success">⚡ Proses Terdepan</button>
+            </div>
+          </form>
+          <div id="process-result" class="result-box hidden mt-12"></div>
+
+          <!-- Sub-menu: Lihat Riwayat Peminjaman (sub-menu #4 dari Python) -->
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+            <button id="btn-show-borrow-history" class="btn btn-secondary" style="width:100%">
+              📋 Lihat Riwayat Peminjaman
+            </button>
+          </div>
+        </div>
+
+        <!-- Visualisasi antrian -->
+        <div class="card">
+          <h2 class="card-title">Antrian Aktif <span id="queue-size-badge" class="badge">0/20</span></h2>
+          <div id="queue-visual" class="queue-visual">
+            <div class="queue-empty-msg">Antrian kosong</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: 7. Pengembalian Buku ── -->
+    <section id="page-return-book" class="page">
+      <div class="page-header">
+        <h1>↩️ Pengembalian Buku</h1>
+        <p class="page-desc">Pengembalian hanya bisa dilakukan jika ada riwayat peminjaman yang valid.</p>
+      </div>
+      <div class="card form-card">
+        <form id="form-return" novalidate>
+          <div class="form-group">
+            <label>Nama Anggota</label>
+            <input type="text" id="return-member" placeholder="Nama anggota yang mengembalikan" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label>Kode Buku</label>
+            <input type="text" id="return-code" placeholder="Kode buku yang dikembalikan" autocomplete="off" />
+          </div>
+          <div id="return-result" class="result-box hidden"></div>
+          <button type="submit" class="btn btn-primary">Proses Pengembalian</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── PAGE: Riwayat (akses via nav & tombol di Antrian) ── -->
+    <section id="page-history" class="page">
+      <div class="page-header">
+        <h1>📋 Riwayat Aktivitas</h1>
+      </div>
+      <div class="toolbar">
+        <div class="tab-pills">
+          <button class="pill active" data-filter="PINJAM">Peminjaman</button>
+          <button class="pill" data-filter="KEMBALI">Pengembalian</button>
+        </div>
+        <button id="btn-clear-history" class="btn btn-danger-outline">🗑️ Hapus Semua Riwayat</button>
+      </div>
+      <div class="table-wrapper">
+        <table id="history-table">
+          <thead>
+            <tr><th>No.</th><th>Tanggal & Waktu</th><th>Nama Anggota</th><th>Kode Buku</th><th>Status</th></tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  <!-- ===== MODAL KONFIRMASI ===== -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-icon">⚠️</div>
+      <h3 id="modal-title">Konfirmasi</h3>
+      <p id="modal-msg"></p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn btn-secondary">Batal</button>
+        <button id="modal-confirm" class="btn btn-danger">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
